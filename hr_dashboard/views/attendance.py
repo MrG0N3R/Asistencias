@@ -31,9 +31,18 @@ from ..dataframes import (
 
 def render_attendance_view(st):
     st.title("Dashboard de asistencia")
-    st.caption("Carga archivos .xlsx con el formato de checador para Planta y Oficinas.")
+    st.caption(
+        "Carga archivos .xlsx con columna RELOJ o con el formato ENTRADA/SALIDA."
+    )
 
-    uploaded_file = st.file_uploader("Archivo de asistencia (.xlsx)", type=["xlsx"])
+    uploaded_file = st.file_uploader(
+        "Archivo de asistencia (.xlsx)",
+        type=["xlsx"],
+        help=(
+            "Se aceptan los encabezados NO.TRAB, NOMBRE, FECHA, DEPARTAMENTO "
+            "y una columna RELOJ o ENTRADA/SALIDA."
+        ),
+    )
     if not uploaded_file:
         st.info("Sube un archivo para calcular asistencias, retardos, incidencias y penalizaciones por periodo jueves a miercoles.")
         return
@@ -44,6 +53,12 @@ def render_attendance_view(st):
     except Exception as exc:
         st.error(str(exc))
         return
+
+    if preview_marks and all(mark.building == "Sin especificar" for mark in preview_marks):
+        st.warning(
+            "Este archivo no incluye la columna RELOJ. Las marcas se analizarán "
+            "normalmente, pero el edificio aparecerá como 'Sin especificar'."
+        )
 
     employee_meta = {}
     for mark in preview_marks:

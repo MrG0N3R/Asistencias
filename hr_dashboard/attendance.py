@@ -69,14 +69,25 @@ def find_header(ws) -> tuple[int, dict[str, int]]:
         "NOTRAB": "employee_id",
         "NOMBRE": "name",
         "FECHA": "timestamp",
-        "RELOJ": "clock",
         "DEPARTAMENTO": "department",
     }
     for row_idx, row in enumerate(ws.iter_rows(max_row=40, values_only=True), start=1):
         normalized = {normalize_header(v): idx for idx, v in enumerate(row) if v is not None}
-        if set(required).issubset(normalized):
-            return row_idx, {target: normalized[source] for source, target in required.items() if source in normalized}
-    raise ValueError("No se encontro el encabezado esperado: NO.TRAB, NOMBRE, FECHA, RELOJ, DEPARTAMENTO.")
+        if not set(required).issubset(normalized):
+            continue
+
+        columns = {target: normalized[source] for source, target in required.items()}
+        if "RELOJ" in normalized:
+            columns["clock"] = normalized["RELOJ"]
+        if "ENTRADASALIDA" in normalized:
+            columns["direction"] = normalized["ENTRADASALIDA"]
+        if "clock" in columns or "direction" in columns:
+            return row_idx, columns
+
+    raise ValueError(
+        "No se encontro el encabezado esperado: NO.TRAB, NOMBRE, FECHA, "
+        "DEPARTAMENTO y RELOJ o ENTRADA/SALIDA."
+    )
 
 
 def infer_building(clock: str) -> str:
@@ -336,7 +347,8 @@ def load_marks(file_bytes: bytes) -> list[Mark]:
             clock = clean(row_value("clock"))
             department = clean(row_value("department"))
             if employee_id and name and timestamp:
-                marks.append(Mark(employee_id, name, department, infer_building(clock), timestamp))
+                building = infer_building(clock) if clock else "Sin especificar"
+                marks.append(Mark(employee_id, name, department, building, timestamp))
     if not marks:
         raise ValueError("El archivo no contiene marcas validas con el formato esperado.")
     return marks
