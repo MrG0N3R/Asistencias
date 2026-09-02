@@ -32,15 +32,15 @@ from ..dataframes import (
 def render_attendance_view(st):
     st.title("Dashboard de asistencia")
     st.caption(
-        "Carga archivos .xlsx con columna RELOJ o con el formato ENTRADA/SALIDA."
+        "Carga archivos .xlsx; la columna RELOJ es opcional."
     )
 
     uploaded_file = st.file_uploader(
         "Archivo de asistencia (.xlsx)",
         type=["xlsx"],
         help=(
-            "Se aceptan los encabezados NO.TRAB, NOMBRE, FECHA, DEPARTAMENTO "
-            "y una columna RELOJ o ENTRADA/SALIDA."
+            "Se requieren NO.TRAB, NOMBRE, FECHA y DEPARTAMENTO. "
+            "RELOJ y ENTRADA/SALIDA son columnas opcionales."
         ),
     )
     if not uploaded_file:
@@ -53,12 +53,6 @@ def render_attendance_view(st):
     except Exception as exc:
         st.error(str(exc))
         return
-
-    if preview_marks and all(mark.building == "Sin especificar" for mark in preview_marks):
-        st.warning(
-            "Este archivo no incluye la columna RELOJ. Las marcas se analizarán "
-            "normalmente, pero el edificio aparecerá como 'Sin especificar'."
-        )
 
     employee_meta = {}
     for mark in preview_marks:

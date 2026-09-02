@@ -81,12 +81,10 @@ def find_header(ws) -> tuple[int, dict[str, int]]:
             columns["clock"] = normalized["RELOJ"]
         if "ENTRADASALIDA" in normalized:
             columns["direction"] = normalized["ENTRADASALIDA"]
-        if "clock" in columns or "direction" in columns:
-            return row_idx, columns
+        return row_idx, columns
 
     raise ValueError(
-        "No se encontro el encabezado esperado: NO.TRAB, NOMBRE, FECHA, "
-        "DEPARTAMENTO y RELOJ o ENTRADA/SALIDA."
+        "No se encontro el encabezado esperado: NO.TRAB, NOMBRE, FECHA y DEPARTAMENTO."
     )
 
 
@@ -347,8 +345,15 @@ def load_marks(file_bytes: bytes) -> list[Mark]:
             clock = clean(row_value("clock"))
             department = clean(row_value("department"))
             if employee_id and name and timestamp:
-                building = infer_building(clock) if clock else "Sin especificar"
-                marks.append(Mark(employee_id, name, department, building, timestamp))
+                marks.append(
+                    Mark(
+                        employee_id,
+                        name,
+                        department,
+                        infer_building(clock),
+                        timestamp,
+                    )
+                )
     if not marks:
         raise ValueError("El archivo no contiene marcas validas con el formato esperado.")
     return marks

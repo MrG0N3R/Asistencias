@@ -37,7 +37,20 @@ class AttendanceImportTests(unittest.TestCase):
 
         self.assertEqual(len(marks), 2)
         self.assertEqual(marks[0].employee_id, "100")
-        self.assertEqual(marks[0].building, "Sin especificar")
+        self.assertEqual(marks[0].department, "ADMINISTRACION")
+        self.assertEqual(marks[0].building, "Planta")
+
+    def test_accepts_format_without_clock_or_direction(self):
+        data = workbook_bytes(
+            ["NO.TRAB", "NOMBRE", "FECHA", "DEPARTAMENTO"],
+            [[150, "Alicia", datetime(2026, 8, 1, 8, 0), "CONTABILIDAD"]],
+        )
+
+        marks = load_marks(data)
+
+        self.assertEqual(len(marks), 1)
+        self.assertEqual(marks[0].department, "CONTABILIDAD")
+        self.assertEqual(marks[0].building, "Planta")
 
     def test_preserves_clock_format_and_building_inference(self):
         data = workbook_bytes(
@@ -50,12 +63,12 @@ class AttendanceImportTests(unittest.TestCase):
         self.assertEqual(len(marks), 1)
         self.assertEqual(marks[0].building, "CEDIS")
 
-    def test_header_reports_both_supported_variants(self):
+    def test_header_reports_only_required_columns(self):
         workbook = Workbook()
         sheet = workbook.active
-        sheet.append(["NO.TRAB", "NOMBRE", "FECHA", "DEPARTAMENTO"])
+        sheet.append(["NO.TRAB", "NOMBRE", "FECHA"])
 
-        with self.assertRaisesRegex(ValueError, "RELOJ o ENTRADA/SALIDA"):
+        with self.assertRaisesRegex(ValueError, "DEPARTAMENTO"):
             find_header(sheet)
 
 
