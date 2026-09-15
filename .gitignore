@@ -1,0 +1,8 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.streamlit/activity_db.toml
+.streamlit/secrets.toml
+*.log

@@ -8,6 +8,14 @@ def run_streamlit():
     import streamlit as st
 
     st.set_page_config(page_title="Panel de Recursos Humanos", page_icon="📊", layout="wide")
+    from .auth import require_login
+    from .tracker import track_user_activity
+
+    current_user = require_login()
+    track_user_activity(
+        app_name="Dashboard Checadores",
+        username_override=current_user.username,
+    )
     st.markdown(
         """
         <style>
