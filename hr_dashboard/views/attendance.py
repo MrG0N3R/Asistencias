@@ -17,6 +17,7 @@ from ..config import (
     SCHEDULE_ADMINISTRATIVE,
     SCHEDULE_FINISHED_GOODS,
     SCHEDULE_PRODUCTION,
+    SCHEDULE_LABELS,
     SCHEDULE_SECURITY_CEDIS,
     SCHEDULE_SECURITY_PLANT_1,
     SCHEDULE_SECURITY_PLANT_2,
@@ -88,7 +89,7 @@ def render_attendance_view(st):
         if saved_exceptions_error:
             st.warning(saved_exceptions_error)
         administrative_ids = st.multiselect(
-            "Administrativo 08:00-17:00",
+            SCHEDULE_LABELS[SCHEDULE_ADMINISTRATIVE],
             employee_ids,
             default=[
                 employee_id

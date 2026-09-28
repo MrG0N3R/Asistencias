@@ -11,6 +11,7 @@ from pathlib import Path
 from openpyxl import load_workbook
 
 from .config import (
+    ADMIN_FRIDAY_REDUCTION_MINUTES,
     ADMIN_MIN_WORK_HOURS,
     ARRIVAL_TOLERANCE_MINUTES,
     FINISHED_GOODS_ENTRY,
@@ -157,11 +158,14 @@ def production_shift_for_entry(entry: datetime) -> dict:
 
 def regular_shift_for_entry(entry: datetime) -> dict:
     operational_date = entry.date()
+    reduction_minutes = ADMIN_FRIDAY_REDUCTION_MINUTES if operational_date.weekday() == 4 else 0
+    scheduled_end = combine(operational_date, REGULAR_EXIT_LIMIT) - timedelta(minutes=reduction_minutes)
     return {
-        "shift": "Administrativo 08:00-17:00",
+        "shift": f"Administrativo {REGULAR_ENTRY_LIMIT:%H:%M}-{scheduled_end:%H:%M}",
         "operational_date": operational_date,
         "scheduled_start": combine(operational_date, REGULAR_ENTRY_LIMIT),
-        "scheduled_end": combine(operational_date, REGULAR_EXIT_LIMIT),
+        "scheduled_end": scheduled_end,
+        "minimum_work_hours": ADMIN_MIN_WORK_HOURS - reduction_minutes / 60,
     }
 
 
@@ -536,7 +540,11 @@ def analyze(
                 else SECURITY_FULL_SHIFT_HOURS
             )
         else:
-            minimum_work_hours = PRODUCTION_MIN_WORK_HOURS if production else ADMIN_MIN_WORK_HOURS
+            minimum_work_hours = (
+                PRODUCTION_MIN_WORK_HOURS
+                if production
+                else shift_info.get("minimum_work_hours", ADMIN_MIN_WORK_HOURS)
+            )
         minimum_work_minutes = round(minimum_work_hours * 60)
         late_limit = shift_info["scheduled_start"] + timedelta(minutes=ARRIVAL_TOLERANCE_MINUTES)
 
@@ -646,9 +654,9 @@ def analyze(
         "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "rules": {
             "arrival_tolerance": "Todo el personal tiene 10 minutos de tolerancia después del inicio de su turno.",
-            "administrative": "Horario 08:00-17:00 (9 horas); se acepta desde 8.7 horas trabajadas sin incidencia.",
+            "administrative": "Horario 08:00-17:00 (9 horas); viernes 08:00-16:30 (8.5 horas). Minimo valido: 8.7 horas; viernes 8.2 horas, conservando la tolerancia de jornada.",
             "production": "Turnos 06:00-14:00, 14:00-22:00 y 22:00-06:00; mínimo de 8 horas.",
-            "minimum_hours": "Administrativos: 8.7 horas válidas. Producción: 8 horas.",
+            "minimum_hours": "Administrativos: 8.7 horas validas; viernes 8.2 horas (8 h 12 min). Producto terminado: 8.7 horas. Produccion: 8 horas.",
             "finished_goods": "Almacen de producto terminado: horario fijo 07:00-16:30, con 10 minutos de tolerancia.",
             "raw_materials": "Almacen de materia prima comparte los turnos y reglas de Produccion.",
             "production_reclassification": "Personal etiquetado como Produccion con mas de 8.5 horas trabajadas se evalua como Administrativo.",
